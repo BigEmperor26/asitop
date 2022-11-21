@@ -1,27 +1,32 @@
 import os
-import glob
 import subprocess
+from queue import LifoQueue
 from subprocess import PIPE
+from threading import Thread
 import psutil
 from .parsers import *
 import plistlib
 
-
-def parse_powermetrics(path='/tmp/asitop_powermetrics', timecode="0"):
-    data = None
+def parse_powermetrics(queue):
     try:
-        with open(path+timecode, 'rb') as fp:
-            data = fp.read()
-        data = data.split(b'\x00')
-        powermetrics_parse = plistlib.loads(data[-1])
+        # a Last in First out queue
+        data = queue.get()
+        powermetrics_parse = plistlib.loads(data)
         thermal_pressure = parse_thermal_pressure(powermetrics_parse)
         cpu_metrics_dict = parse_cpu_metrics(powermetrics_parse)
         gpu_metrics_dict = parse_gpu_metrics(powermetrics_parse)
+<<<<<<< HEAD
         #bandwidth_metrics = parse_bandwidth_metrics(powermetrics_parse)
         bandwidth_metrics = None
+=======
+        # bandwidth_metrics = parse_bandwidth_metrics(powermetrics_parse)
+        network_metrics_dict = parse_network_metrics(powermetrics_parse)
+        disk_metrics_dict = parse_disk_metrics(powermetrics_parse)
+>>>>>>> 6ed6025 (Ventura and Threading)
         timestamp = powermetrics_parse["timestamp"]
-        return cpu_metrics_dict, gpu_metrics_dict, thermal_pressure, bandwidth_metrics, timestamp
+        return cpu_metrics_dict, gpu_metrics_dict, thermal_pressure, network_metrics_dict, disk_metrics_dict, timestamp
     except Exception as e:
+<<<<<<< HEAD
         if data:
             if len(data) > 1:
                 powermetrics_parse = plistlib.loads(data[-2])
@@ -32,6 +37,8 @@ def parse_powermetrics(path='/tmp/asitop_powermetrics', timecode="0"):
                 bandwidth_metrics = None
                 timestamp = powermetrics_parse["timestamp"]
                 return cpu_metrics_dict, gpu_metrics_dict, thermal_pressure, bandwidth_metrics, timestamp
+=======
+>>>>>>> 6ed6025 (Ventura and Threading)
         return False
 
 
@@ -43,20 +50,49 @@ def clear_console():
 def convert_to_GB(value):
     return round(value/1024/1024/1024, 1)
 
+def enqueue_powermetrics(buffered_reader, queue_in):
+     """
+     a helper to convert the output of `powermetrics`
+       into list of plist strings.
+     buffered_reader: stdout of the `powermetrics` process
+     queue_in: a LIFO queue, will also be provided to the parser
+     """
+     buffer = b''
+     for line in buffered_reader:
+         # magic string
+         if line.startswith(b"\x00"):
+             queue_in.put(buffer)
+             buffer = line[1:]
+         else:
+             buffer += line
 
-def run_powermetrics_process(timecode, nice=10, interval=1000):
+def build_enqueue_thread(powermetrics_stdout):
+    """
+    build a thread to run enqueue_powermetrics()
+    returns:
+        queue: the LIFO queue, containing plist strings
+        equeue_thread: the identifier of the thread
+    """
+    queue = LifoQueue()
+    enqueue_thread = Thread(target=enqueue_powermetrics,
+                            args=(powermetrics_stdout, queue))
+    enqueue_thread.start()
+    return queue, enqueue_thread
+
+def run_powermetrics_process(nice=10, interval=1000):
     #ver, *_ = platform.mac_ver()
     #major_ver = int(ver.split(".")[0])
-    for tmpf in glob.glob("/tmp/asitop_powermetrics*"):
-        os.remove(tmpf)
-    output_file_flag = "-o"
     command = " ".join([
         "sudo nice -n",
         str(nice),
         "powermetrics",
+<<<<<<< HEAD
         "--samplers cpu_power,gpu_power,thermal",
         output_file_flag,
         "/tmp/asitop_powermetrics"+timecode,
+=======
+        "--samplers cpu_power,gpu_power,thermal,disk,network",
+>>>>>>> 6ed6025 (Ventura and Threading)
         "-f plist",
         "-i",
         str(interval)
@@ -103,6 +139,17 @@ def get_cpu_info():
                 cpu_info_dict[h] = value
     return cpu_info_dict
 
+def get_disk_info():
+    """Returns disk capacity in GB
+    """
+    total,used,free,percent=psutil.disk_usage('/')
+    total_GB=total/(1024**3)
+    possible_disk_capacities=[256,512,1024,2048,4096,8192]
+    #256G might be 240~ G here, so we do this
+    for p in possible_disk_capacities:
+        if p>total_GB:
+            return p
+    #TODO: However, it cannot handle things correctly all the time if the disk is partitioned, for example, installed Asahi Linux.
 
 def get_core_counts():
     cores_info = os.popen('sysctl -a | grep hw.perflevel').read()
@@ -147,6 +194,8 @@ def get_soc_info():
         "p_core_count": p_core_count,
         "gpu_core_count": get_gpu_cores()
     }
+    #Theorically Thunderbolt4 can reach 5120 MByte/s, but who will ever use an Ethernet adaptor like that?
+    soc_info["max_network_speed"]=128
     # TDP (power)
     if soc_info["name"] == "Apple M1 Max":
         soc_info["cpu_max_power"] = 30
@@ -167,6 +216,47 @@ def get_soc_info():
         soc_info["cpu_max_power"] = 20
         soc_info["gpu_max_power"] = 20
     # bandwidth
+    disk_capacity=get_disk_info()
+    if soc_info["name"] in ["Apple M1 Max","Apple M1 Pro","Apple M1","Apple M1 Ultra"]:
+        #According to https://forums.macrumors.com/threads/mbp-2021-ssd-speed-comparison-please-contribute.2320899/
+        #In MByte/s
+        write_speeds={
+            256:2500,
+            512:5000,
+            1024:6000,
+            2048:6500,
+            4096:7500,
+            8192:7500,
+        }
+        read_speeds={
+            256:3000,
+            512:5500,
+            1024:5500,
+            2048:5500,
+            4096:6000,
+            8192:6000,
+        }
+        soc_info["disk_write_max"]=write_speeds[disk_capacity]
+        soc_info["disk_read_max"]=read_speeds[disk_capacity]
+    elif soc_info["name"] in ["Apple M2"]:
+        write_speeds={
+            256:1500,
+            512:5000,
+            1024:6000,
+            2048:6500,
+            4096:7500,
+            8192:7500,
+        }
+        read_speeds={
+            256:1500,
+            512:5500,
+            1024:5500,
+            2048:5500,
+            4096:6000,
+            8192:6000,
+        }
+        soc_info["disk_write_max"]=write_speeds[disk_capacity]
+        soc_info["disk_read_max"]=read_speeds[disk_capacity]
     if soc_info["name"] == "Apple M1 Max":
         soc_info["cpu_max_bw"] = 250
         soc_info["gpu_max_bw"] = 400
