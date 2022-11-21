@@ -1,5 +1,11 @@
 # asitop
 
+
+THIS REPO MERGES THE EDITS FROM:
+
+* https://github.com/SuperKenVery/asitop
+* https://github.com/6-6-6/asitop
+
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/asitop)
 
 Performance monitoring CLI tool for Apple Silicon
