@@ -13,11 +13,11 @@ parser = argparse.ArgumentParser(
     description='asitop: Performance monitoring CLI tool for Apple Silicon')
 parser.add_argument('--interval', type=int, default=1,
                     help='Display interval and sampling interval for powermetrics (seconds)')
-parser.add_argument('--color', type=int, default=2,
+parser.add_argument('--color', type=int, default=202,
                     help='Choose display color (0~8)')
 parser.add_argument('--avg', type=int, default=30,
                     help='Interval for averaged values (seconds)')
-parser.add_argument('--show_cores', type=bool, default=False,
+parser.add_argument('--show_cores', type=bool, default=True,
                     help='Choose show cores mode')
 parser.add_argument('--max_count', type=int, default=0,
                     help='Max show count to restart powermetrics')
@@ -27,7 +27,7 @@ args = parser.parse_args()
 def main():
     print("\nASITOP - Performance monitoring CLI tool for Apple Silicon")
     print("You can update ASITOP by running `pip install asitop --upgrade`")
-    print("Get help at `https://github.com/tlkh/asitop`")
+    print("Get help at `https://github.com/BigEmperor26/asitop`")
     print("P.S. You are recommended to run ASITOP with `sudo asitop`\n")
     print("\n[1/3] Loading ASITOP\n")
     print("\033[?25l")

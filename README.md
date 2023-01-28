@@ -13,7 +13,7 @@ Performance monitoring CLI tool for Apple Silicon
 ![](images/asitop.png)
 
 ```shell
-pip install asitop
+pip install git+ssh://git@github.com/BigEmperor26/asitop.git
 ```
 
 ## What is `asitop`
