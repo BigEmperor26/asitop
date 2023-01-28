@@ -23,7 +23,6 @@ parser.add_argument('--max_count', type=int, default=0,
                     help='Max show count to restart powermetrics')
 args = parser.parse_args()
 
-
 def main():
     print("\nASITOP - Performance monitoring CLI tool for Apple Silicon")
     print("You can update ASITOP by running `pip install asitop --upgrade`")
@@ -85,7 +84,7 @@ def main():
             network_download_chart,
             network_upload_chart,
         )]
-    """
+    
     memory_gauges = VSplit(
         ram_gauge,
         *bw_charts,
@@ -136,9 +135,10 @@ def main():
     cpu_max_power = soc_info_dict["cpu_max_power"]
     gpu_max_power = soc_info_dict["gpu_max_power"]
     ane_max_power = 8.0
-    """max_cpu_bw = soc_info_dict["cpu_max_bw"]
+    
+    max_cpu_bw = soc_info_dict["cpu_max_bw"]
     max_gpu_bw = soc_info_dict["gpu_max_bw"]
-    max_media_bw = 7.0"""
+    max_media_bw = 7.0
 
     cpu_peak_power = 0
     gpu_peak_power = 0
@@ -311,7 +311,7 @@ def main():
                     if args.show_cores:
                         bw_gauges_ext = memory_gauges.items[2]
                         bw_gauges_ext.title = "Memory Bandwidth:"
-                    """
+                    
 
                     package_power_W = cpu_metrics_dict["package_W"] / \
                                       args.interval

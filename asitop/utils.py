@@ -15,30 +15,12 @@ def parse_powermetrics(queue):
         thermal_pressure = parse_thermal_pressure(powermetrics_parse)
         cpu_metrics_dict = parse_cpu_metrics(powermetrics_parse)
         gpu_metrics_dict = parse_gpu_metrics(powermetrics_parse)
-<<<<<<< HEAD
-        #bandwidth_metrics = parse_bandwidth_metrics(powermetrics_parse)
-        bandwidth_metrics = None
-=======
         # bandwidth_metrics = parse_bandwidth_metrics(powermetrics_parse)
         network_metrics_dict = parse_network_metrics(powermetrics_parse)
         disk_metrics_dict = parse_disk_metrics(powermetrics_parse)
->>>>>>> 6ed6025 (Ventura and Threading)
         timestamp = powermetrics_parse["timestamp"]
         return cpu_metrics_dict, gpu_metrics_dict, thermal_pressure, network_metrics_dict, disk_metrics_dict, timestamp
     except Exception as e:
-<<<<<<< HEAD
-        if data:
-            if len(data) > 1:
-                powermetrics_parse = plistlib.loads(data[-2])
-                thermal_pressure = parse_thermal_pressure(powermetrics_parse)
-                cpu_metrics_dict = parse_cpu_metrics(powermetrics_parse)
-                gpu_metrics_dict = parse_gpu_metrics(powermetrics_parse)
-                #bandwidth_metrics = parse_bandwidth_metrics(powermetrics_parse)
-                bandwidth_metrics = None
-                timestamp = powermetrics_parse["timestamp"]
-                return cpu_metrics_dict, gpu_metrics_dict, thermal_pressure, bandwidth_metrics, timestamp
-=======
->>>>>>> 6ed6025 (Ventura and Threading)
         return False
 
 
@@ -86,13 +68,7 @@ def run_powermetrics_process(nice=10, interval=1000):
         "sudo nice -n",
         str(nice),
         "powermetrics",
-<<<<<<< HEAD
-        "--samplers cpu_power,gpu_power,thermal",
-        output_file_flag,
-        "/tmp/asitop_powermetrics"+timecode,
-=======
         "--samplers cpu_power,gpu_power,thermal,disk,network",
->>>>>>> 6ed6025 (Ventura and Threading)
         "-f plist",
         "-i",
         str(interval)
